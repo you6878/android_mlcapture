@@ -7,6 +7,7 @@ import android.graphics.Matrix
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Size
+import android.widget.Toast
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageProxy
@@ -16,6 +17,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.google.firebase.ml.vision.FirebaseVision
 import com.google.firebase.ml.vision.common.FirebaseVisionImage
+import com.google.firebase.ml.vision.label.FirebaseVisionOnDeviceImageLabelerOptions
 import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity() {
@@ -29,6 +31,27 @@ class MainActivity : AppCompatActivity() {
             takePhoto()
         }
     }
+
+    //This is labelImages functions
+    fun labelImages(bitmap : Bitmap){
+
+        val options = FirebaseVisionOnDeviceImageLabelerOptions.Builder()
+            .setConfidenceThreshold(0.8f)
+            .build()
+        val detector = FirebaseVision.getInstance().getOnDeviceImageLabeler(options)
+
+        detector.processImage(FirebaseVisionImage.fromBitmap(bitmap))
+            .addOnSuccessListener { labels ->
+                for(label in labels){
+                    val text = label.text
+                    val confidence = (label.confidence * 100).toInt()
+                    Toast.makeText(this,"It's a $confidence% $text",Toast.LENGTH_LONG).show()
+                }
+            }.addOnFailureListener { exception ->
+                Toast.makeText(this,exception.message,Toast.LENGTH_LONG).show()
+            }
+    }
+    //This is textRecognize function
     fun textRecognize(bitmap: Bitmap){
         FirebaseVision.getInstance().onDeviceTextRecognizer.processImage(FirebaseVisionImage.fromBitmap(bitmap))
                 .addOnSuccessListener { firebaseVisionText ->
@@ -48,7 +71,8 @@ class MainActivity : AppCompatActivity() {
         imageCapture?.takePicture(ContextCompat.getMainExecutor(this), object : ImageCapture.OnImageCapturedCallback() {
             override fun onCaptureSuccess(image: ImageProxy) {
                 val bitmap = imageProxyToBitmap(image)
-                textRecognize(bitmap)
+                //textRecognize(bitmap)
+                labelImages(bitmap)
                 super.onCaptureSuccess(image)
             }
         })
