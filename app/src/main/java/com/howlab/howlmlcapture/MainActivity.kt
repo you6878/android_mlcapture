@@ -8,10 +8,7 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Size
 import android.widget.Toast
-import androidx.camera.core.CameraSelector
-import androidx.camera.core.ImageCapture
-import androidx.camera.core.ImageProxy
-import androidx.camera.core.Preview
+import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -112,11 +109,15 @@ class MainActivity : AppCompatActivity() {
                     .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
                     .setTargetRotation(rotation)
                     .build()
-
-
+            val imageAnalyzer = ImageAnalysis.Builder()
+                .setTargetResolution(Size(960/3,1280/3))
+                .setTargetRotation(rotation)
+                .build()
+            val luminosityAnalyzer = LuminosityAnalyzer(this)
+            imageAnalyzer.setAnalyzer(ContextCompat.getMainExecutor(this),luminosityAnalyzer)
             cameraProvider.unbindAll()
 
-            val camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture)
+            val camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture,imageAnalyzer)
             preview.setSurfaceProvider(viewFinder.createSurfaceProvider(camera.cameraInfo))
         }, ContextCompat.getMainExecutor(this))
     }
